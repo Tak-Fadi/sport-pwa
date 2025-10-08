@@ -19,20 +19,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      # IMPORTANT : désactive le binaire natif de Rollup (contourne le bug npm)
-      - name: Install deps
+      # Désactiver Rollup natif pour tout le job
+      - name: Force Rollup JS impl
+        run: echo "ROLLUP_SKIP_NODEJS_NATIVE=1" >> $GITHUB_ENV
+
+      - name: Install deps (npm ci)
         run: npm ci
-        env:
-          ROLLUP_SKIP_NODEJS_NATIVE: '1'
 
       - name: Build
         run: npm run build
-        env:
-          ROLLUP_SKIP_NODEJS_NATIVE: '1'
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
