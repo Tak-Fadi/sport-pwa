@@ -8,7 +8,6 @@ import {
   getMeals
 } from "./storage";
 
-// Exposés pour les pages
 export async function postMeal(payload){ return addMeal(payload); }
 export async function daySummary(userId, date){ return getDaySummary(userId, date); }
 export async function weekSummary(userId, anyDate){ return getWeekSummary(userId, anyDate); }

@@ -63,7 +63,7 @@ export async function getWeekSummary(userId, anyDateStr) {
   return out;
 }
 
-// Planning (inchangé)
+// Planning
 export async function getPlanLocal(userId){
   return (await localforage.getItem(KEYS.PLAN(userId))) || [];
 }
