@@ -25,11 +25,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      # Désactiver Rollup natif pour tout le job
+      # Désactive Rollup natif pour toutes les étapes du job
       - name: Force Rollup JS impl
         run: echo "ROLLUP_SKIP_NODEJS_NATIVE=1" >> $GITHUB_ENV
 
-      - name: Install deps (npm ci)
+      - name: Install deps
         run: npm ci
 
       - name: Build
