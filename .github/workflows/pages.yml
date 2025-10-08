@@ -17,20 +17,34 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # ⬇️ Désactive Rollup natif pour TOUTES les étapes du job
+    env:
+      ROLLUP_SKIP_NODEJS_NATIVE: '1'
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # ⚠️ Pas de cache npm pour éviter de garder un lock cassé
+          check-latest: true
 
-      # Désactive Rollup natif pour toutes les étapes du job
-      - name: Force Rollup JS impl
-        run: echo "ROLLUP_SKIP_NODEJS_NATIVE=1" >> $GITHUB_ENV
+      # 🔥 Nettoyage complet avant installation
+      - name: Clean workspace
+        run: |
+          rm -rf node_modules package-lock.json
+          npm cache clean --force
 
-      - name: Install deps
-        run: npm ci
+      - name: Install deps (fresh)
+        run: npm install --no-audit --no-fund
+
+      - name: Verify env for Rollup
+        run: |
+          node -v
+          npm -v
+          echo "ROLLUP_SKIP_NODEJS_NATIVE=$ROLLUP_SKIP_NODEJS_NATIVE"
 
       - name: Build
         run: npm run build
