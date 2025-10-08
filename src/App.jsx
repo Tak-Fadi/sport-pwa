@@ -8,8 +8,8 @@ export default function App(){
     <div className="container">
       <h1>Coach Fadi</h1>
       <div className="nav">
-        <Link to="/journal">Journal</Link>
-        <Link to="/week">Semaine</Link>
+        <Link to="/journal">Journal Caloriques</Link>
+        <Link to="/week">Semaine </Link>
         <Link to="/plan">Planning</Link>
       </div>
       <Routes>

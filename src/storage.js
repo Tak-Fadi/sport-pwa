@@ -1,4 +1,5 @@
 import localforage from "localforage";
+
 localforage.config({ name: "sportcoach", storeName: "db" });
 
 const KEYS = {
@@ -16,19 +17,18 @@ export async function addMeal({ userId, date, type="other", kcal=0, protein=0, c
   return { ok: true };
 }
 
-export async function deleteMeal(userId, date, id){
+export async function deleteMeal(userId, date, id) {
   const key = KEYS.MEALS(userId, date);
   const list = (await localforage.getItem(key)) || [];
   const next = list.filter(m => m.id !== id);
   await localforage.setItem(key, next);
-  return { ok:true };
+  return { ok: true };
 }
 
-export async function getMeals(userId, date){
+export async function getMeals(userId, date) {
   const key = KEYS.MEALS(userId, date);
   const list = (await localforage.getItem(key)) || [];
-  // rétro-compat : si ancien item sans "type"
-  return list.map(m => ({ type:"type" in m ? m.type : "other", ...m }));
+  return list.map(m => ({ type: "type" in m ? m.type : "other", ...m }));
 }
 
 export async function getDaySummary(userId, date) {
@@ -37,7 +37,6 @@ export async function getDaySummary(userId, date) {
     a.kcal += m.kcal||0; a.p+=m.protein||0; a.c+=m.carbs||0; a.f+=m.fat||0; return a;
   }, {kcal:0,p:0,c:0,f:0});
 
-  // agrégation par type
   const byType = {};
   for (const t of TYPE_ORDER) byType[t] = { kcal:0, p:0, c:0, f:0 };
   for (const m of list) {
@@ -52,7 +51,7 @@ export async function getDaySummary(userId, date) {
 
 export async function getWeekSummary(userId, anyDateStr) {
   const d = new Date(anyDateStr);
-  const day = (d.getDay()+6)%7; // 0=lundi
+  const day = (d.getDay()+6)%7; // 0=Lun
   const monday = new Date(d); monday.setDate(d.getDate() - day);
   const out = [];
   for (let i=0;i<7;i++){
@@ -64,6 +63,7 @@ export async function getWeekSummary(userId, anyDateStr) {
   return out;
 }
 
+// Planning (inchangé)
 export async function getPlanLocal(userId){
   return (await localforage.getItem(KEYS.PLAN(userId))) || [];
 }

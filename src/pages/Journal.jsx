@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { postMeal, daySummary, listMeals, removeMeal } from "../api";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 const todayStr = () => new Date().toISOString().slice(0,10);
 const typeOptions = [
@@ -9,6 +10,16 @@ const typeOptions = [
   { value:"snack",     label:"Collation" },
   { value:"other",     label:"Autre" },
 ];
+const COLORS = {
+  breakfast: "#60a5fa", // bleu
+  lunch:     "#34d399", // vert
+  dinner:    "#f59e0b", // orange
+  snack:     "#f472b6", // rose
+  other:     "#94a3b8"  // slate
+};
+const toChartData = (byType) =>
+  Object.entries(byType || {}).map(([key, v]) => ({ name: key, value: v.kcal || 0 }));
+
 
 export default function Journal(){
   const [userId] = useState(1);
