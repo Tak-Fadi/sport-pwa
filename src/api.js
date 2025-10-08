@@ -15,3 +15,7 @@ export async function getPlan(userId){ return getPlanLocal(userId); }
 export async function addPlan(day){ return addPlanLocal(day); }
 export async function removeMeal(userId, date, id){ return deleteMeal(userId, date, id); }
 export async function listMeals(userId, date){ return getMeals(userId, date); }
+export async function removePlan(userId, id){ 
+  const { deletePlanLocal } = await import("./storage");
+  return deletePlanLocal(userId, id); 
+}

@@ -1,63 +1,117 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { addPlan, getPlan } from "../api";
+import { Card, Input, Select, Button, Pill } from "../components/ui";
 
-const weekOptions = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+// Jours (lundi = 0 pour être cohérent avec la partie semaine)
+const WEEKDAYS = [
+  { v:0, label:"Lundi" },
+  { v:1, label:"Mardi" },
+  { v:2, label:"Mercredi" },
+  { v:3, label:"Jeudi" },
+  { v:4, label:"Vendredi" },
+  { v:5, label:"Samedi" },
+  { v:6, label:"Dimanche" },
+];
+
+const TYPES = [
+  "Cardio", "Force", "HIIT", "Pliométrie", "Mobilité", "Repos", "Autre"
+];
 
 export default function Plan(){
   const [userId] = useState(1);
   const [items, setItems] = useState([]);
-  const [form, setForm] = useState({ weekday:"Lundi", type:"Cardio", targetDurationMin:"60", notes:"" });
-  const [err, setErr] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ weekday: 0, type: "Cardio", targetDurationMin: 30, notes: "" });
 
-  async function load(){ setItems(await getPlan(userId)); }
+  async function load(){
+    const list = await getPlan(userId);
+    setItems(list || []);
+  }
   useEffect(()=>{ load(); }, []);
 
-  async function onSubmit(e){
-    e.preventDefault(); setLoading(true); setErr("");
-    try {
-      await addPlan({
-        userId,
-        weekday: form.weekday,
-        type: form.type,
-        targetDurationMin: +form.targetDurationMin || 0,
-        notes: form.notes
-      });
-      setForm({ weekday:"MONDAY", type:"Cardio", targetDurationMin:"60", notes:"" });
-      await load();
-    } catch(e){ setErr(String(e)); }
-    finally { setLoading(false); }
+  const grouped = useMemo(()=>{
+    const g = new Map();
+    for (const d of WEEKDAYS) g.set(d.v, []);
+    for (const it of items) {
+      const w = (typeof it.weekday === "number" ? it.weekday : 0);
+      if(!g.has(w)) g.set(w, []);
+      g.get(w).push(it);
+    }
+    return g;
+  }, [items]);
+
+  async function submit(e){
+    e.preventDefault();
+    await addPlan({ userId, weekday: +form.weekday, type: form.type, targetDurationMin: +form.targetDurationMin || 0, notes: form.notes || "" });
+    setForm({ weekday: form.weekday, type: form.type, targetDurationMin: 30, notes: "" });
+    await load();
   }
 
   return (
     <>
-      <div className="card">
-        <h3>Ajouter un jour d’entraînement</h3>
-        <form onSubmit={onSubmit} style={{display:"grid", gap:10}}>
-          <select className="select" value={form.weekday} onChange={e=>setForm({...form, weekday:e.target.value})}>
-            {weekOptions.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <input className="input" placeholder="Type (Force, Cardio, Repos…)" value={form.type} onChange={e=>setForm({...form, type:e.target.value})}/>
-          <input className="input" placeholder="Durée cible (min)" value={form.targetDurationMin} onChange={e=>setForm({...form, targetDurationMin:e.target.value})}/>
-          <input className="input" placeholder="Notes" value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})}/>
-          <button className="button" disabled={loading}>{loading?"Ajout...":"Ajouter"}</button>
-          {err && <div style={{color:"#ff6b6b"}}>{err}</div>}
+      <Card title="Ajouter une séance">
+        <form onSubmit={submit} className="grid gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Select value={form.weekday} onChange={e=>setForm({...form, weekday: +e.target.value})}>
+              {WEEKDAYS.map(d => <option key={d.v} value={d.v}>{d.label}</option>)}
+            </Select>
+            <Select value={form.type} onChange={e=>setForm({...form, type: e.target.value})}>
+              {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input type="number" placeholder="Durée (min)" value={form.targetDurationMin}
+                   onChange={e=>setForm({...form, targetDurationMin: e.target.value})}/>
+            <Input placeholder="Notes (optionnel)" value={form.notes}
+                   onChange={e=>setForm({...form, notes: e.target.value})}/>
+          </div>
+          <Button>Ajouter</Button>
         </form>
-      </div>
+      </Card>
 
-      <div className="card">
-        <h3>Planning (L→D)</h3>
-        <div className="list">
-          {items.map(it =>
-            <div key={it.id} className="card" style={{margin:0}}>
-              <div className="label">{it.weekday}</div>
-              <div><b>{it.type}</b> — {it.targetDurationMin||0} min</div>
-              {it.notes && <div className="label">{it.notes}</div>}
+      <Card title="Planning hebdo">
+        <div className="space-y-3">
+          {WEEKDAYS.map(d => {
+            const list = grouped.get(d.v) || [];
+            return (
+              <div key={d.v} className="glass rounded-2xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-semibold">{d.label}</div>
+                  <Pill>{list.length} séance{list.length>1?"s":""}</Pill>
+                </div>
+                {list.length === 0 ? (
+                  <div className="text-white/60 text-sm">—</div>
+                ) : (
+                  <div className="grid gap-2">
+                  {list.map(it => (
+                    <div key={it.id} className="glass rounded-xl p-2">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium">{it.type || "Séance"}</div>
+                        <div className="flex items-center gap-2">
+                          {typeof it.targetDurationMin === "number" && it.targetDurationMin > 0 && (
+                            <div className="text-white/70 text-sm">{it.targetDurationMin} min</div>
+                          )}
+                          <button
+                            className="tap text-[13px] px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10"
+                            onClick={async ()=>{ 
+                              const { removePlan } = await import("../api");
+                              await removePlan(userId, it.id);
+                              await load();
+                            }}
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      </div>
+                      {it.notes && <div className="text-white/70 text-sm mt-1">{it.notes}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-          {!items.length && <div className="label">Commence par ajouter un jour 👆</div>}
+          );
+          })}
         </div>
-      </div>
+      </Card>
     </>
   );
 }

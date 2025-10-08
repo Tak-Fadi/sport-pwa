@@ -74,3 +74,10 @@ export async function addPlanLocal({ userId, weekday, type, targetDurationMin=0,
   await localforage.setItem(key, list);
   return { ok:true };
 }
+export async function deletePlanLocal(userId, id){
+  const key = KEYS.PLAN(userId);
+  const list = (await localforage.getItem(key)) || [];
+  const next = list.filter(x => x.id !== id);
+  await localforage.setItem(key, next);
+  return { ok:true };
+}
